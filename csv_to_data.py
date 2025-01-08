@@ -1,11 +1,11 @@
 import os
 import pickle
 from typing import List, Dict
-from sklearn.cluster import KMeans as KMeans_
+
 import numpy as np
 import pandas as pd
 import tqdm
-import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans as KMeans_
 
 # import create_graph
 from utils import sphere_to_xyz
@@ -155,6 +155,7 @@ def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
             for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
 
+
 # ___________________________________________________________________________
 
 
@@ -179,7 +180,7 @@ def load_cartesian_map():
 def data_to_graph(dic: Dict):
     all_launches = []
     launches_id = []
-    for rocket_id in range(1,1500,1):
+    for rocket_id in range(1, 1500, 1):
         mat = dic[rocket_id]
         t = mat[TIME]
         x = mat[X]
@@ -189,14 +190,13 @@ def data_to_graph(dic: Dict):
             continue
         x_l, y_l = get_launch_point(x, y, z, t)
         launches_id.append(rocket_id)
-        all_launches.append((x_l,y_l))
+        all_launches.append((x_l, y_l))
 
-    all_launches = [x for x in all_launches if -50<=x[0]<=10 and -70<=x[1]<=10]
-    launches_id = [launches_id[x] for x in range(len(all_launches)) if -50<=all_launches[x][0]<=10 and -70<=all_launches[x][1]<=10]
+    all_launches = [x for x in all_launches if -50 <= x[0] <= 10 and -70 <= x[1] <= 10]
+    launches_id = [launches_id[x] for x in range(len(all_launches)) if -50 <= all_launches[x][0] <= 10 and -70 <= all_launches[x][1] <= 10]
     # Plot all_launches
     x_coords = [point[0] for point in all_launches]
     y_coords = [point[1] for point in all_launches]
-
 
     # Plot the points
     # plt.scatter(x_coords, y_coords, color='blue', label='Points')
@@ -208,7 +208,7 @@ def data_to_graph(dic: Dict):
     # plt.grid()
     # plt.show()
 
-    kmeans = kmeans_with_min_cluster_size(data =all_launches, n_clusters =50, min_size= 10, max_iter=300, random_state=None)
+    kmeans = kmeans_with_min_cluster_size(data=all_launches, n_clusters=50, min_size=10, max_iter=300, random_state=None)
 
     centres = kmeans[1]
     labels = kmeans[0]
@@ -216,10 +216,8 @@ def data_to_graph(dic: Dict):
     # plt.scatter(newx_points,newy_points, color='blue', label='centers')
     # plt.show()
 
-    print([([launches_id[j] for j in range(len(all_launches)) if labels[j]==i],centres[i]) for i in range(50)])
-    return [([launches_id[j] for j in range(len(all_launches)) if labels[j]==i],centres[i]) for i in range(50)]
-
-
+    print([([launches_id[j] for j in range(len(all_launches)) if labels[j] == i], centres[i]) for i in range(50)])
+    return [([launches_id[j] for j in range(len(all_launches)) if labels[j] == i], centres[i]) for i in range(50)]
 
 
 def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=300, random_state=None):
@@ -269,22 +267,12 @@ def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=300, rando
 
 
 def get_launch_point(x, y, z, t):
-    # plt.plot(t, x)
-    # plt.plot(t, y)
-    # plt.plot(t, z)
-    # plt.show()
-    # Plot the results
-
+    first_part_len = len(x) // 3
+    x = x[:first_part_len]
+    y = y[:first_part_len]
+    z = z[:first_part_len]
+    t = t[:first_part_len]
     coefficients = np.polyfit(t, z, 2)  # Returns [a, b, c] for at^2 + bt + c
-
-    z_approx = np.polyval(coefficients, t)  # Evaluate the polynomial
-
-    # plt.plot(t, z_approx, '--', label='Parabolic Approximation of z(t)')
-    # plt.legend()
-    # plt.xlabel('t')
-    # plt.ylabel('Values')
-    # plt.title('Function and Parabolic Approximation')
-    # plt.grid()
 
     a, b, c = coefficients
 
@@ -300,26 +288,40 @@ def get_launch_point(x, y, z, t):
         t1 = (-b + np.sqrt(discriminant)) / (2 * a)
         t2 = (-b - np.sqrt(discriminant)) / (2 * a)
         print(f"Hit times: t1 = {t1:.2f}, t2 = {t2:.2f}")
-    elif discriminant == 0:
-        # One real root (tangential hit)
-        t = -b / (2 * a)
-        return None
-        print(f"Single hit time: t = {t:.2f}")
     else:
         return None
-        # No real roots
-        print("No hit times (parabola does not reach the target value).")
-
-    # print(t1)
-    #
-    # print(f"x={linear_fit_and_predict(t, x, t1)}")
-    # print(f"y={linear_fit_and_predict(t, y, t1)}")
-    return (linear_fit_and_predict(t, x, t1),linear_fit_and_predict(t, y, t1))
+    return (polynomial_fit_and_predict(t, x, t1), polynomial_fit_and_predict(t, y, t1))
     # plt.show()
 
-import numpy as np
 
-def linear_fit_and_predict(t, x, t1):
+def get_landing_point(x, y, z, t):
+    first_part_len = len(x) // 3
+    x = x[first_part_len:]
+    y = y[first_part_len:]
+    z = z[first_part_len:]
+    t = t[first_part_len:]
+    coefficients = np.polyfit(t, z, 2)  # Returns [a, b, c] for at^2 + bt + c
+
+    a, b, c = coefficients
+
+    # Target value to find hit time
+    z_hit = 0  # Adjust this value as needed
+
+    # Solve the quadratic equation: at^2 + bt + (c - z_hit) = 0
+    c_prime = c - z_hit
+    discriminant = b ** 2 - 4 * a * c_prime
+
+    if discriminant > 0:
+        # Two real roots
+        t1 = (-b + np.sqrt(discriminant)) / (2 * a)
+        t2 = (-b - np.sqrt(discriminant)) / (2 * a)
+        print(f"Hit times: t1 = {t1:.2f}, t2 = {t2:.2f}")
+    else:
+        return None
+    return (polynomial_fit_and_predict(t, x, t2), polynomial_fit_and_predict(t, y, t2))
+
+
+def polynomial_fit_and_predict(t, x, t1, deg=1):
     """
     Perform a linear fit to the data (t, x) and return the predicted value at t1.
 
@@ -331,13 +333,8 @@ def linear_fit_and_predict(t, x, t1):
     Returns:
         float: The predicted value of the linear fit at t1.
     """
-    # Perform a linear fit (x = m*t + c)
-    coefficients = np.polyfit(t, x, 1)  # Degree 1 for linear fit
-    m, c = coefficients  # Slope and intercept
-
-    # Compute the fitted value at t1
-    x_t1 = m * t1 + c
-    return x_t1
+    coefficients = np.polyfit(t, x, deg)  # Degree 1 for linear fit
+    return np.polyval(coefficients, t1)  # Evaluate the polynomial
 
 
 if __name__ == "__main__":
