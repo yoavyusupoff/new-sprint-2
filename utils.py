@@ -3,9 +3,6 @@ import math
 import geopy.distance
 
 
-
-
-
 RADAR_DICT = {
     "Ashdod": (31.77757586390034, 34.65751251836753),
     "Kiryat_Gat": (31.602089287486198, 34.74535762921831),
@@ -38,16 +35,16 @@ def sphere_to_xyz(radar_name: str, rocket_by_radar: Tuple[float, float, float]) 
 def radar_name_to_xy(radar_name: str):
     lat, long = RADAR_DICT[radar_name]
     O_lat, O_long = RADAR_DICT['Ashdod']
+
     x_sign = 1
     y_sign = 1
+
     if long - O_long < 0:
         x_sign = -1
     if lat - O_lat < 0:
         y_sign = -1
-    y = geopy.distance.geodesic((lat, O_long), (O_lat, O_long)).km * y_sign
-    x = geopy.distance.geodesic((O_lat, long), (O_lat, O_long)).km * x_sign
-    return x, y
 
-print(radar_name_to_xy("Kiryat_Gat"))
-x, y = radar_name_to_xy("Kiryat_Gat")
-print(math.sqrt(x**2 + y**2))
+    x = geopy.distance.geodesic((O_lat, long), (O_lat, O_long)).km * x_sign
+    y = geopy.distance.geodesic((lat, O_long), (O_lat, O_long)).km * y_sign
+
+    return x, y
