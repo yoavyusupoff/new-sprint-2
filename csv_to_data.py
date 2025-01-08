@@ -5,6 +5,7 @@ from typing import List, Dict
 import numpy as np
 import pandas as pd
 import tqdm
+from matplotlib import pyplot as plt
 from sklearn.cluster import KMeans as KMeans_
 
 # import create_graph
@@ -177,10 +178,10 @@ def load_cartesian_map():
     return cartesian_map
 
 
-def data_to_graph(dic: Dict):
+def get_launch_points_clustered(dic: Dict):
     all_launches = []
     launches_id = []
-    for rocket_id in range(1, 1500, 1):
+    for rocket_id, mat in dic.items():
         mat = dic[rocket_id]
         t = mat[TIME]
         x = mat[X]
@@ -220,7 +221,7 @@ def data_to_graph(dic: Dict):
     return [([launches_id[j] for j in range(len(all_launches)) if labels[j] == i], centres[i]) for i in range(50)]
 
 
-def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=300, random_state=None):
+def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=1000, random_state=None):
     """
     Perform KMeans clustering ensuring each cluster has at least `min_size` items.
 
@@ -267,7 +268,7 @@ def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=300, rando
 
 
 def get_launch_point(x, y, z, t):
-    first_part_len = len(x) // 3
+    first_part_len = 2*len(x) // 3
     x = x[:first_part_len]
     y = y[:first_part_len]
     z = z[:first_part_len]
@@ -283,14 +284,28 @@ def get_launch_point(x, y, z, t):
     c_prime = c - z_hit
     discriminant = b ** 2 - 4 * a * c_prime
 
-    if discriminant > 0:
-        # Two real roots
-        t1 = (-b + np.sqrt(discriminant)) / (2 * a)
-        t2 = (-b - np.sqrt(discriminant)) / (2 * a)
-        print(f"Hit times: t1 = {t1:.2f}, t2 = {t2:.2f}")
-    else:
+    if discriminant <= 0:
         return None
-    return (polynomial_fit_and_predict(t, x, t1), polynomial_fit_and_predict(t, y, t1))
+    t1 = (-b + np.sqrt(discriminant)) / (2 * a)
+    t2 = (-b - np.sqrt(discriminant)) / (2 * a)
+
+    fit_deg = 2
+    x_0 = polynomial_fit_and_predict(t, x, t1, deg=fit_deg)
+    y_0 = polynomial_fit_and_predict(t, y, t1, deg=fit_deg)
+
+    # # Plot polyfit of deg fit_deg of x and y as a function of t
+    # plt.scatter(t, np.polyval(np.polyfit(t, x, fit_deg), t), color='black', label='x')
+    # plt.scatter(t, np.polyval(np.polyfit(t, y, fit_deg), t), color='black', label='y')
+    # # Plot x, y, z as function of t and mark 0 at x_0, y_0
+    # plt.scatter(t, x, color='blue', label='x')
+    # plt.scatter(t, y, color='red', label='y')
+    # plt.scatter(t, z, color='yellow', label='z')
+    # # Add x mark at t1, x0
+    # plt.scatter(t1, x_0, color='blue', marker='x', label='x_0')
+    # plt.scatter(t1, y_0, color='red', marker='x', label='y_0')
+    # plt.show()
+
+    return (x_0, y_0)
     # plt.show()
 
 
@@ -322,20 +337,8 @@ def get_landing_point(x, y, z, t):
 
 
 def polynomial_fit_and_predict(t, x, t1, deg=1):
-    """
-    Perform a linear fit to the data (t, x) and return the predicted value at t1.
-
-    Parameters:
-        t (array-like): Independent variable (e.g., time).
-        x (array-like): Dependent variable (e.g., some measurement over time).
-        t1 (float): The point at which to evaluate the linear fit.
-
-    Returns:
-        float: The predicted value of the linear fit at t1.
-    """
     coefficients = np.polyfit(t, x, deg)  # Degree 1 for linear fit
     return np.polyval(coefficients, t1)  # Evaluate the polynomial
-
 
 if __name__ == "__main__":
     PKL = r"pkl/1420.pkl"
@@ -348,9 +351,9 @@ if __name__ == "__main__":
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    new = load_cartesian_map()
+    cartesian_map = load_cartesian_map()
 
-    data_to_graph(new)
+    get_launch_points_clustered(cartesian_map)
     # create_graph.run(map)
 
     # for a, b in convert_dict_to_list_of_tuples(new):
