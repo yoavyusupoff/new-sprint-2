@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 
-import create_graph
+# import create_graph
 from utils import sphere_to_xyz
 
 # ___________________________________________________________________________
@@ -128,8 +128,8 @@ def convert_dict_to_list_of_tuples(d: dict):
 def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
     result = pd.DataFrame()
 
-    # copy the radar name and time columns
-    result[RADAR_NAME] = table[RADAR_NAME]
+    # copy the time column
+    # result[RADAR_NAME] = table[RADAR_NAME]
     result[TIME] = table[TIME]
 
     x_list, y_list, z_list = [], [], []
@@ -158,35 +158,40 @@ def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[
 # ___________________________________________________________________________
 
 
-def main(folder_path: str) -> Dict[int, np.ndarray]:
+def get_numpy_result(folder_path: str) -> Dict[int, np.ndarray]:
     merged = merge_id_to_data_maps(folder_path)
     merged_in_cartesian = create_id_to_cartesian_map(merged)
 
     result = dict()
     for key, id_map in convert_dict_to_list_of_tuples(merged_in_cartesian):
+        id_map.drop(columns=[RADAR_NAME], inplace=True)
         result[key] = id_map.to_numpy()
 
     return result
 
 
 def load_cartesian_map():
-    with open(PKL, "rb") as f:
-        map = pickle.load(f)
-    return map
+    with open(PKL, "rb") as file:
+        cartesian_map = pickle.load(file)
+    return cartesian_map
 
 
 if __name__ == "__main__":
     folder_path_ = "./data/With ID/Target bank data"
 
-    PKL = r"pkl/1341.pkl"
+    PKL = r"pkl/1420.pkl"
     # ____________ If you want to save ______________
     # result_ = merge_id_to_data_maps(folder_path_)
     # new = create_id_to_cartesian_map(result_)
-    # Save new with pickle into pkl/[time].pkl
-    # with open(f"pkl/{1333}.pkl", "wb") as f:
+    # # Save new with pickle into pkl/[time].pkl
+    # with open(f"pkl/{1420}.pkl", "wb") as f:
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    map = load_cartesian_map()
+    new = load_cartesian_map()
 
-    create_graph.run(map)
+    # create_graph.run(map)
+
+    for x, y in convert_dict_to_list_of_tuples(new):
+        print(f"ID = {x}")
+        print(y)
