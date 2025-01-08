@@ -158,13 +158,10 @@ def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[
 # ___________________________________________________________________________
 
 
-def get_numpy_result(folder_path: str) -> Dict[int, np.ndarray]:
-    merged = merge_id_to_data_maps(folder_path)
-    merged_in_cartesian = create_id_to_cartesian_map(merged)
+def get_numpy_result(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, np.ndarray]:
 
     result = dict()
-    for key, id_map in convert_dict_to_list_of_tuples(merged_in_cartesian):
-        id_map.drop(columns=[RADAR_NAME], inplace=True)
+    for key, id_map in convert_dict_to_list_of_tuples(id_to_data_map):
         result[key] = id_map.to_numpy()
 
     return result
@@ -189,6 +186,10 @@ def data_to_graph(dic: Dict):
         plt.show()
 
 
+def ramot_main() -> Dict[int, np.ndarray]:
+    return get_numpy_result(load_cartesian_map())
+
+
 if __name__ == "__main__":
     PKL = r"pkl/1420.pkl"
 
@@ -200,11 +201,15 @@ if __name__ == "__main__":
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    new = load_cartesian_map()
-
-    data_to_graph(new)
+    # new = load_cartesian_map()
+    #
+    # ramot_output = get_numpy_result(new)
+    #
+    # data_to_graph(new)
     # create_graph.run(map)
 
-    for a, b in convert_dict_to_list_of_tuples(new):
+    res = ramot_main()
+
+    for a, b in convert_dict_to_list_of_tuples(res):
         print(f"ID = {a}")
         print(b)
