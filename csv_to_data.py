@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import pandas as pd
 from typing import List, Tuple, Dict
 import tqdm
@@ -143,7 +144,7 @@ def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
 
 def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, pd.DataFrame]:
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
-            for rocket_id, data_table in id_to_data_map.items()}
+            for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
 
 # ___________________________________________________________________________
 
@@ -161,12 +162,21 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
 
 if __name__ == "__main__":
     folder_path_ = "./data/With ID/Target bank data"
-    result_ = merge_id_to_data_dicts(folder_path_)
 
-    new = create_id_to_xyz_table(result_)
+    PKL = r"pkl/1341.pkl"
+    # ____________ If you want to save ______________
+    # result_ = merge_id_to_data_maps(folder_path_)
+    # new = create_id_to_cartesian_map(result_)
     # Save new with pickle into pkl/[time].pkl
+
+    # ____________ If you want to load ______________
+    with open(PKL, "rb") as f:
+        new = pickle.load(f)
+
+
+
     with open(f"pkl/{1333}.pkl", "wb") as f:
         pickle.dump(new, f)
-    for tup in new:
-        print(f"ID = {tup[0]}")
-        print(tup[1])
+    for key, value in new.items():
+        print(key)
+        print(value)
