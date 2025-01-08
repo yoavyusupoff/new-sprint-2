@@ -2,7 +2,10 @@ import os
 
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+
 from typing import List, Dict
+
 
 from utils import sphere_to_xyz
 
@@ -159,6 +162,18 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
 
     return result
 
+def graphs(dic):
+    for id in range(1, 1500, 50):
+        mat = dic[id]
+        t = mat[TIME]
+        x = mat[X]
+        y = mat[Y]
+        z = mat[Z]
+        plt.plot(t,x)
+        plt.plot(t,y)
+        plt.plot(t,z)
+        plt.show()
 
 if __name__ == "__main__":
-    print(main(FOLDER_PATH))
+    dic = main(FOLDER_PATH)
+    graphs(dic)
