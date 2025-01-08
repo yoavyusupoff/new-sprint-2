@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 from typing import List, Tuple, Dict
-
+import tqdm
 from utils import sphere_to_xyz
-
+import pickle
 # ___________________________________________________________________________
 
 
@@ -112,7 +112,7 @@ def merge_id_to_data_dicts(folder_path: str) -> List[Tuple[int, pd.DataFrame]]:
 def create_id_to_xyz_table(id_to_data_map: List[Tuple[int, pd.DataFrame]]):
     result = []
 
-    for rocket_id, data_table in id_to_data_map:
+    for rocket_id, data_table in tqdm.tqdm(id_to_data_map, desc="Converting to xyz"):
         new_data = pd.DataFrame()
         new_data[RADAR_NAME] = data_table[RADAR_NAME]
         new_data[TIME] = data_table[TIME]
@@ -140,11 +140,13 @@ def create_id_to_xyz_table(id_to_data_map: List[Tuple[int, pd.DataFrame]]):
 
 # run example
 if __name__ == "__main__":
-    folder_path_ = "./data/With ID/Impact points data"
+    folder_path_ = "./data/With ID/Target bank data"
     result_ = merge_id_to_data_dicts(folder_path_)
 
     new = create_id_to_xyz_table(result_)
-
+    # Save new with pickle into pkl/[time].pkl
+    with open(f"pkl/{1333}.pkl", "wb") as f:
+        pickle.dump(new, f)
     for tup in new:
         print(f"ID = {tup[0]}")
         print(tup[1])
