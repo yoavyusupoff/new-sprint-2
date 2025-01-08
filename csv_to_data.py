@@ -266,28 +266,17 @@ def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=1000, rand
 
     return labels, centers
 
-def get_launch_point(x,y,z,t):
-    return get_launch_finish_points(x,y,z,t)[0]
 
-def get_hit_point(x,y,z,t):
-    return get_launch_finish_points(x,y,z,t)[1]
-def get_launch_finish_points(x, y, z, t):
+def get_launch_point(x, y, z, t):
     first_part_len = 2*len(x) // 3
+    x = x[:first_part_len]
+    y = y[:first_part_len]
+    z = z[:first_part_len]
+    t = t[:first_part_len]
+    coefficients = np.polyfit(t, z, 2)  # Returns [a, b, c] for at^2 + bt + c
 
-    x_start = x[:first_part_len]
-    y_start = y[:first_part_len]
-    z_start = z[:first_part_len]
-    t_start = t[:first_part_len]
+    a, b, c = coefficients
 
-    x_hitt = x[first_part_len:]
-    y_hitt = y[first_part_len::]
-    z_hitt = z[first_part_len::]
-    t_hitt = t[first_part_len::]
-    coefficients_start = np.polyfit(t_start, z_start, 2)  # Returns [a, b, c] for at^2 + bt + c
-    coefficients_fin = np.polyfit(t_start, z_hitt, 2)  # Returns [a, b, c] for at^2 + bt + c
-
-    a, b, c = coefficients_start
-    d,e,f = coefficients_fin
     # Target value to find hit time
     z_hit = 0  # Adjust this value as needed
 
@@ -298,13 +287,12 @@ def get_launch_finish_points(x, y, z, t):
     if discriminant <= 0:
         return None
     t1 = (-b + np.sqrt(discriminant)) / (2 * a)
-    t2 = (-e - np.sqrt(discriminant)) / (2 * d)
+    t2 = (-b - np.sqrt(discriminant)) / (2 * a)
 
     fit_deg = 2
-    x_0 = polynomial_fit_and_predict(t_start, x_start, t1, deg=fit_deg)
-    y_0 = polynomial_fit_and_predict(t_start, y_start, t1, deg=fit_deg)
+    x_0 = polynomial_fit_and_predict(t, x, t1, deg=fit_deg)
+    y_0 = polynomial_fit_and_predict(t, y, t1, deg=fit_deg)
 
-    x_1,y_1 = polynomial_fit_and_predict(t_hitt, x_hitt, t2, deg=fit_deg), polynomial_fit_and_predict(t_hitt, y_hitt, t2, deg=fit_deg)
     # # Plot polyfit of deg fit_deg of x and y as a function of t
     # plt.scatter(t, np.polyval(np.polyfit(t, x, fit_deg), t), color='black', label='x')
     # plt.scatter(t, np.polyval(np.polyfit(t, y, fit_deg), t), color='black', label='y')
@@ -317,7 +305,7 @@ def get_launch_finish_points(x, y, z, t):
     # plt.scatter(t1, y_0, color='red', marker='x', label='y_0')
     # plt.show()
 
-    return [(x_0, y_0),(x_1,y_1),t2-t1]
+    return (x_0, y_0)
     # plt.show()
 
 
