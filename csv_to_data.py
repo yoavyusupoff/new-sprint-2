@@ -168,6 +168,8 @@ if __name__ == "__main__":
     # result_ = merge_id_to_data_maps(folder_path_)
     # new = create_id_to_cartesian_map(result_)
     # Save new with pickle into pkl/[time].pkl
+    # with open(f"pkl/{1333}.pkl", "wb") as f:
+    #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
     with open(PKL, "rb") as f:
@@ -175,8 +177,7 @@ if __name__ == "__main__":
 
 
 
-    with open(f"pkl/{1333}.pkl", "wb") as f:
-        pickle.dump(new, f)
+
     for key, value in new.items():
         print(key)
         print(value)
