@@ -2,14 +2,12 @@ import os
 import pickle
 from typing import List, Dict
 
-import numpy as np
 import pandas as pd
-import tqdm
+import numpy as np
+import matplotlib.pyplot as plt
 
-import create_graph
+# import create_graph
 from utils import sphere_to_xyz
-
-PKL = r"pkl/1341.pkl"
 
 # ___________________________________________________________________________
 
@@ -130,8 +128,8 @@ def convert_dict_to_list_of_tuples(d: dict):
 def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
     result = pd.DataFrame()
 
-    # copy the radar name and time columns
-    result[RADAR_NAME] = table[RADAR_NAME]
+    # copy the time column
+    # result[RADAR_NAME] = table[RADAR_NAME]
     result[TIME] = table[TIME]
 
     x_list, y_list, z_list = [], [], []
@@ -154,40 +152,56 @@ def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
 
 def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, pd.DataFrame]:
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
-            for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
-
-
+            for rocket_id, data_table in id_to_data_map.items()}
 # ___________________________________________________________________________
 
 
-def main(folder_path: str) -> Dict[int, np.ndarray]:
+def get_numpy_result(folder_path: str) -> Dict[int, np.ndarray]:
     merged = merge_id_to_data_maps(folder_path)
     merged_in_cartesian = create_id_to_cartesian_map(merged)
 
     result = dict()
     for key, id_map in convert_dict_to_list_of_tuples(merged_in_cartesian):
+        id_map.drop(columns=[RADAR_NAME], inplace=True)
         result[key] = id_map.to_numpy()
 
     return result
 
 
 def load_cartesian_map():
-    with open(PKL, "rb") as f:
-        map = pickle.load(f)
-        return map
+    with open(PKL, "rb") as file:
+        cartesian_map = pickle.load(file)
+    return cartesian_map
 
+def data_to_graph(dic: Dict):
+    for id in range(1,1500,50):
+        mat = dic[id]
+        t = mat[TIME]
+        x = mat[X]
+        y = mat[Y]
+        z = mat[Z]
+        plt.plot(t,x)
+        plt.plot(t, y)
+        plt.plot(t,z)
+        plt.show()
 
 if __name__ == "__main__":
+    print(main(FOLDER_PATH))
     folder_path_ = "./data/With ID/Target bank data"
 
+    PKL = r"pkl/1420.pkl"
     # ____________ If you want to save ______________
-    # result_ = merge_id_to_data_maps(folder_path_)
-    # new = create_id_to_cartesian_map(result_)
-    # Save new with pickle into pkl/[time].pkl
-    # with open(f"pkl/{1333}.pkl", "wb") as f:
-    #     pickle.dump(new, f)
+    result_ = merge_id_to_data_maps(folder_path_)
+    new = create_id_to_cartesian_map(result_)
+    ## Save new with pickle into pkl/[time].pkl
+    with open(f"pkl/{1420}.pkl", "wb") as f:
+        pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    map = load_cartesian_map()
+    new = load_cartesian_map()
+    data_to_graph(map)
+    # create_graph.run(map)
 
-    create_graph.run(map.values())
+    for x, y in convert_dict_to_list_of_tuples(new):
+        print(f"ID = {x}")
+        print(y)
