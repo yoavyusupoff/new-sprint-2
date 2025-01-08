@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 from typing import List, Tuple, Dict
 import tqdm
+
+import create_graph
 from utils import sphere_to_xyz
 import pickle
 # ___________________________________________________________________________
@@ -176,8 +178,4 @@ if __name__ == "__main__":
         new = pickle.load(f)
 
 
-
-
-    for key, value in new.items():
-        print(key)
-        print(value)
+    create_graph.run(map)
