@@ -190,4 +190,4 @@ if __name__ == "__main__":
     # ____________ If you want to load ______________
     map = load_cartesian_map()
 
-    create_graph.run(map)
+    create_graph.run(map.values())

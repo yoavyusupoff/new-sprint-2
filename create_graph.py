@@ -14,16 +14,17 @@ Z = "z"
 TIME = "time"
 def get_fit(points):
     x_points,y_points,z_points,t_points = extract_arrays(points)
-    x_poly = plot_points_and_fit_line(t_points,x_points,1)
-    y_poly = plot_points_and_fit_line(t_points,y_points,1)
+    x_poly = np.poly1d(plot_points_and_fit_line(t_points,x_points,1))
+    y_poly = np.poly1d(plot_points_and_fit_line(t_points,y_points,1))
     z_poly = plot_points_and_fit_line(t_points,z_points,2)
 
 
     zeros = find_zero_of_quadratic_fit(z_points,t_points)
-    assert (len(zeros) == 2)
-    first,last = min(zeros[0],zeros[1]),max(zeros[0],zeros[1])
-    first_point, last_point = (x_poly[1]*first+x_poly[0],y_poly[1]*first+y_poly[0],0),(x_poly[1]*last+x_poly[0],y_poly[1]*last+y_poly[0],0)
-    return first_point,last_point
+    if (zeros != None and len(zeros) == 2):
+        first,last = min(zeros[0],zeros[1]),max(zeros[0],zeros[1])
+        first_point, last_point = (x_poly(first),y_poly(first),0),(x_poly(last),y_poly(last),0)
+        return first_point,last_point
+    return (0,0,0),(0,0,0)
 
 def plot_points_and_fit_line(x, t, deg):
     """
@@ -90,8 +91,8 @@ def find_zero_of_quadratic_fit(y, t):
 
 def run(n_rockets):
     points = []
-    for i in range(len(n_rockets)):
-        point = get_fit(n_rockets[i][1])
+    for value in n_rockets:
+        point = get_fit(value)
         points.append(point[0][0:2])
     testList2 = np.array([(elem1, elem2) for elem1, elem2 in points])
 
@@ -125,5 +126,4 @@ def extract_arrays(df):
     y_points = df[Y].to_numpy()
     t_points = df[TIME].to_numpy()
     z_points = df[Z].to_numpy()
-
     return x_points,y_points,z_points,t_points
