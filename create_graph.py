@@ -61,7 +61,7 @@ def plot_points_and_fit_line(x, t, deg):
     # plt.legend()
 
     # Show the plot
-    plt.show()
+    # plt.show()
     return coefficients
 
 def find_zero_of_quadratic_fit(y, t):
@@ -89,16 +89,23 @@ def find_zero_of_quadratic_fit(y, t):
 
 
 def run(n_rockets):
-    points = np.array(0)
+    points = []
     for i in range(len(n_rockets)):
         point = get_fit(n_rockets[i][1])
-        np.append(points,point)
+        points.append(point[0][0:2])
+    testList2 = np.array([(elem1, elem2) for elem1, elem2 in points])
+
+    x_points,y_points = [x for x,_ in testList2], [y for _,y in testList2]
+    plt.scatter(x_points,y_points,color='red', label='Fitted Line')
+    plt.show()
+
     kmeans = KMeans_(n_clusters=50,random_state=42)
     clusters = kmeans.fit(points)
     centres = kmeans.cluster_centers_
 
-    plt.scatter(centres, color='blue', label='centers')
-
+    newx_points, newy_points = [x for x, _ in centres], [y for _, y in centres]
+    plt.scatter(newx_points,newy_points, color='blue', label='centers')
+    plt.show()
 
 def extract_arrays(df):
     """
