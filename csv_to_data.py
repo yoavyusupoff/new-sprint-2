@@ -4,8 +4,9 @@ from typing import List, Dict
 
 import pandas as pd
 import numpy as np
-from typing import List, Dict
+import matplotlib.pyplot as plt
 
+from typing import List, Dict
 from utils import sphere_to_xyz
 
 # ___________________________________________________________________________
@@ -171,6 +172,17 @@ def load_cartesian_map():
         map = pickle.load(f)
     return map
 
+def data_to_graph(dic: Dict):
+    for id in range(1,1500,50):
+        mat = dic[id]
+        t = mat[TIME]
+        x = mat[X]
+        y = mat[Y]
+        z = mat[Z]
+        plt.plot(t,x)
+        plt.plot(t, y)
+        plt.plot(t,z)
+        plt.show()
 
 if __name__ == "__main__":
     print(main(FOLDER_PATH))
@@ -178,13 +190,13 @@ if __name__ == "__main__":
 
     PKL = r"pkl/1341.pkl"
     # ____________ If you want to save ______________
-    # result_ = merge_id_to_data_maps(folder_path_)
-    # new = create_id_to_cartesian_map(result_)
-    # Save new with pickle into pkl/[time].pkl
-    # with open(f"pkl/{1333}.pkl", "wb") as f:
-    #     pickle.dump(new, f)
+    result_ = merge_id_to_data_maps(folder_path_)
+    new = create_id_to_cartesian_map(result_)
+    #Save new with pickle into pkl/[time].pkl
+    with open(f"pkl/{1333}.pkl", "wb") as f:
+        pickle.dump(new, f)
 
     # ____________ If you want to load ______________
     map = load_cartesian_map()
-
-    create_graph.run(map)
+    data_to_graph(map)
+    #create_graph.run(map)
