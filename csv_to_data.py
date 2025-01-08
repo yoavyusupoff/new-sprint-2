@@ -161,6 +161,10 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
 
     return result
 
+def load_cartesian_map():
+    with open(PKL, "rb") as f:
+        map = pickle.load(f)
+    return map
 
 if __name__ == "__main__":
     folder_path_ = "./data/With ID/Target bank data"
@@ -174,8 +178,7 @@ if __name__ == "__main__":
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    with open(PKL, "rb") as f:
-        new = pickle.load(f)
+    map = load_map()
 
 
     create_graph.run(map)
