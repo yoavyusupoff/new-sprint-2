@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 
+import create_graph
 from utils import sphere_to_xyz
 
 PKL = r"pkl/1341.pkl"
@@ -189,6 +190,4 @@ if __name__ == "__main__":
     # ____________ If you want to load ______________
     map = load_cartesian_map()
 
-    for key, value in map.items():
-        print(key)
-        print(value)
+    create_graph.run(map)
