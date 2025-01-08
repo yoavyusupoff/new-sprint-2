@@ -215,8 +215,8 @@ def data_to_graph(dic: Dict):
     newx_points, newy_points = [x for x, _ in centres], [y for _, y in centres]
     # plt.scatter(newx_points,newy_points, color='blue', label='centers')
     # plt.show()
-    for i in range(50):
-        print(centres[i], len([j for j in range(len(all_launches)) if labels[j]==i]))
+
+    print([([launches_id[j] for j in range(len(all_launches)) if labels[j]==i],centres[i]) for i in range(50)])
     return [([launches_id[j] for j in range(len(all_launches)) if labels[j]==i],centres[i]) for i in range(50)]
 
 
