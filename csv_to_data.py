@@ -1,12 +1,13 @@
 import os
+import pickle
+from typing import List, Dict
 
 import pandas as pd
-from typing import List, Tuple, Dict
 import numpy as np
 from typing import List, Dict
 
 from utils import sphere_to_xyz
-import pickle
+
 # ___________________________________________________________________________
 
 
@@ -33,6 +34,7 @@ ELEVATION_UC = "elevation_uncertainty"
 AZIMUTH_UC = "azimuth_uncertainty"
 RAD_VEL_UC = "radial_velocity_uncertainty"
 
+
 # ___________________________________________________________________________
 
 
@@ -45,6 +47,7 @@ def get_all_filenames(folder_path: str) -> List[str]:
             filenames.append(file_path)
 
     return filenames
+
 
 # ___________________________________________________________________________
 
@@ -85,6 +88,7 @@ def create_id_to_data_map(radar_filename: str, folder_path: str) -> Dict[int, pd
     return {int(key): modify_sub_table(sub_table, radar_name)
             for (key, sub_table) in data_frame.groupby(ID)}
 
+
 # ___________________________________________________________________________
 
 
@@ -109,11 +113,13 @@ def merge_id_to_data_maps(folder_path: str) -> Dict[int, pd.DataFrame]:
 
     return result_map
 
+
 # ___________________________________________________________________________
 
 
 def convert_dict_to_list_of_tuples(d: dict):
     return list(sorted(d.items()))
+
 
 # ___________________________________________________________________________
 
@@ -160,6 +166,12 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
     return result
 
 
+def load_cartesian_map():
+    with open(PKL, "rb") as f:
+        map = pickle.load(f)
+    return map
+
+
 if __name__ == "__main__":
     print(main(FOLDER_PATH))
     folder_path_ = "./data/With ID/Target bank data"
@@ -173,8 +185,6 @@ if __name__ == "__main__":
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    with open(PKL, "rb") as f:
-        new = pickle.load(f)
-
+    map = load_cartesian_map()
 
     create_graph.run(map)
