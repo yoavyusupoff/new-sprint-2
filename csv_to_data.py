@@ -1,11 +1,12 @@
 import os
 
 import pandas as pd
+from typing import List, Tuple, Dict
 import numpy as np
 from typing import List, Dict
 
 from utils import sphere_to_xyz
-
+import pickle
 # ___________________________________________________________________________
 
 
@@ -145,7 +146,6 @@ def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
 def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, pd.DataFrame]:
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
             for rocket_id, data_table in id_to_data_map.items()}
-
 # ___________________________________________________________________________
 
 
@@ -162,3 +162,19 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
 
 if __name__ == "__main__":
     print(main(FOLDER_PATH))
+    folder_path_ = "./data/With ID/Target bank data"
+
+    PKL = r"pkl/1341.pkl"
+    # ____________ If you want to save ______________
+    # result_ = merge_id_to_data_maps(folder_path_)
+    # new = create_id_to_cartesian_map(result_)
+    # Save new with pickle into pkl/[time].pkl
+    # with open(f"pkl/{1333}.pkl", "wb") as f:
+    #     pickle.dump(new, f)
+
+    # ____________ If you want to load ______________
+    with open(PKL, "rb") as f:
+        new = pickle.load(f)
+
+
+    create_graph.run(map)
