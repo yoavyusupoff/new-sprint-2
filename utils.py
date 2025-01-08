@@ -27,8 +27,8 @@ def sphere_to_xyz(radar_name: str, rocket_by_radar: Tuple[float, float, float]) 
     phi = math.radians(phi)
     theta = math.radians(theta)
 
-    x = x_radar + r * math.sin(phi) * math.cos(theta)
-    y = y_radar + r * math.sin(phi) * math.sin(theta)
+    x = x_radar + r * math.sin(phi) * math.sin(theta)
+    y = y_radar + r * math.sin(phi) * math.cos(theta)
     z = r * math.cos(phi)
 
     return x, y, z
@@ -38,8 +38,14 @@ def sphere_to_xyz(radar_name: str, rocket_by_radar: Tuple[float, float, float]) 
 def radar_name_to_xy(radar_name: str):
     lat, long = RADAR_DICT[radar_name]
     O_lat, O_long = RADAR_DICT['Ashdod']
-    x = geopy.distance.geodesic((lat, O_long), (O_lat, O_long)).m
-    y = geopy.distance.geodesic((O_lat, long), (O_lat, O_long)).m
+    x_sign = 1
+    y_sign = 1
+    if long - O_long < 0:
+        x_sign = -1
+    if lat - O_lat < 0:
+        y_sign = -1
+    y = geopy.distance.geodesic((lat, O_long), (O_lat, O_long)).km * y_sign
+    x = geopy.distance.geodesic((O_lat, long), (O_lat, O_long)).km * x_sign
     return x, y
 
 print(radar_name_to_xy("Kiryat_Gat"))

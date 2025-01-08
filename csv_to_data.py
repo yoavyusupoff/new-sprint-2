@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from typing import List, Tuple, Dict
 
-from utils import sphere_to_cartesian
+from utils import sphere_to_xyz
 
 # ___________________________________________________________________________
 
@@ -114,13 +114,14 @@ def create_id_to_xyz_table(id_to_data_map: List[Tuple[int, pd.DataFrame]]):
 
     for rocket_id, data_table in id_to_data_map:
         new_data = pd.DataFrame()
+        new_data[RADAR_NAME] = data_table[RADAR_NAME]
         new_data[TIME] = data_table[TIME]
 
         x_list, y_list, z_list = [], [], []
 
         for index, row in data_table.iterrows():
             r, phi, theta = row[RANGE], row[PHI], row[AZIMUTH]
-            x, y, z = sphere_to_cartesian(row[RADAR_NAME], (r, phi, theta))
+            x, y, z = sphere_to_xyz(row[RADAR_NAME], (r, phi, theta))
             x_list.append(x)
             y_list.append(y)
             z_list.append(z)
