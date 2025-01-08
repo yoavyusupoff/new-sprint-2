@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import warnings
 
+import tqdm
 from sklearn.cluster import KMeans as KMeans_
 import matplotlib.pyplot as plt
 
@@ -91,8 +92,8 @@ def find_zero_of_quadratic_fit(y, t):
 
 def run(n_rockets):
     points = []
-    for value in n_rockets:
-        point = get_fit(value)
+    for i in tqdm.tqdm(range(len(n_rockets))):
+        point = get_fit(n_rockets[i][1])
         points.append(point[0][0:2])
     testList2 = np.array([(elem1, elem2) for elem1, elem2 in points])
 

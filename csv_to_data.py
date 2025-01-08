@@ -1,7 +1,7 @@
 import os
 import pickle
 from typing import List, Dict
-
+from sklearn.cluster import KMeans as KMeans_
 import numpy as np
 import pandas as pd
 import tqdm
@@ -177,16 +177,167 @@ def load_cartesian_map():
 
 
 def data_to_graph(dic: Dict):
-    for rocket_id in range(1,1500,50):
+    all_launches = []
+    launches_id = []
+    for rocket_id in range(1,1500,1):
         mat = dic[rocket_id]
         t = mat[TIME]
         x = mat[X]
         y = mat[Y]
         z = mat[Z]
-        plt.plot(t,x)
-        plt.plot(t, y)
-        plt.plot(t,z)
-        plt.show()
+        if get_launch_point(x, y, z, t) is None:
+            continue
+        x_l, y_l = get_launch_point(x, y, z, t)
+        launches_id.append(rocket_id)
+        all_launches.append((x_l,y_l))
+
+    all_launches = [x for x in all_launches if -50<=x[0]<=10 and -70<=x[1]<=10]
+    launches_id = [launches_id[x] for x in range(len(all_launches)) if -50<=all_launches[x][0]<=10 and -70<=all_launches[x][1]<=10]
+    # Plot all_launches
+    x_coords = [point[0] for point in all_launches]
+    y_coords = [point[1] for point in all_launches]
+
+
+    # Plot the points
+    # plt.scatter(x_coords, y_coords, color='blue', label='Points')
+    # # plt.plot(x_coords, y_coords, linestyle='--', color='orange', label='Line')
+    # plt.xlabel('X')
+    # plt.ylabel('Y')
+    # plt.title('2D Points Plot')
+    # plt.legend()
+    # plt.grid()
+    # plt.show()
+
+    kmeans = kmeans_with_min_cluster_size(data =all_launches, n_clusters =50, min_size= 10, max_iter=300, random_state=None)
+
+    centres = kmeans[1]
+    labels = kmeans[0]
+    newx_points, newy_points = [x for x, _ in centres], [y for _, y in centres]
+    # plt.scatter(newx_points,newy_points, color='blue', label='centers')
+    # plt.show()
+    for i in range(50):
+        print(centres[i], len([j for j in range(len(all_launches)) if labels[j]==i]))
+    return [([launches_id[j] for j in range(len(all_launches)) if labels[j]==i],centres[i]) for i in range(50)]
+
+
+
+
+def kmeans_with_min_cluster_size(data, n_clusters, min_size, max_iter=300, random_state=None):
+    """
+    Perform KMeans clustering ensuring each cluster has at least `min_size` items.
+
+    Parameters:
+        data (ndarray): The dataset (n_samples, n_features).
+        n_clusters (int): Number of clusters.
+        min_size (int): Minimum number of items per cluster.
+        max_iter (int): Maximum number of iterations for KMeans.
+        random_state (int): Random seed for reproducibility.
+
+    Returns:
+        labels (ndarray): Cluster assignments for each data point.
+        centers (ndarray): Coordinates of cluster centers.
+    """
+    kmeans = KMeans_(n_clusters=n_clusters, max_iter=max_iter, random_state=random_state)
+    kmeans.fit(data)
+    labels = kmeans.labels_
+    centers = kmeans.cluster_centers_
+
+    # Recheck cluster sizes and adjust if necessary
+    while True:
+        unique, counts = np.unique(labels, return_counts=True)
+        cluster_sizes = dict(zip(unique, counts))
+        small_clusters = [k for k, size in cluster_sizes.items() if size < min_size]
+
+        if not small_clusters:
+            break  # All clusters meet the minimum size
+
+        # Find the largest cluster to redistribute points
+        largest_cluster = max(cluster_sizes, key=cluster_sizes.get)
+        largest_cluster_indices = np.where(labels == largest_cluster)[0]
+
+        # Reassign points from the largest cluster to small clusters
+        for small_cluster in small_clusters:
+            deficit = min_size - cluster_sizes[small_cluster]
+            if len(largest_cluster_indices) < deficit:
+                deficit = len(largest_cluster_indices)
+
+            reassign_indices = largest_cluster_indices[:deficit]
+            largest_cluster_indices = largest_cluster_indices[deficit:]
+            labels[reassign_indices] = small_cluster
+
+    return labels, centers
+
+
+def get_launch_point(x, y, z, t):
+    # plt.plot(t, x)
+    # plt.plot(t, y)
+    # plt.plot(t, z)
+    # plt.show()
+    # Plot the results
+
+    coefficients = np.polyfit(t, z, 2)  # Returns [a, b, c] for at^2 + bt + c
+
+    z_approx = np.polyval(coefficients, t)  # Evaluate the polynomial
+
+    # plt.plot(t, z_approx, '--', label='Parabolic Approximation of z(t)')
+    # plt.legend()
+    # plt.xlabel('t')
+    # plt.ylabel('Values')
+    # plt.title('Function and Parabolic Approximation')
+    # plt.grid()
+
+    a, b, c = coefficients
+
+    # Target value to find hit time
+    z_hit = 0  # Adjust this value as needed
+
+    # Solve the quadratic equation: at^2 + bt + (c - z_hit) = 0
+    c_prime = c - z_hit
+    discriminant = b ** 2 - 4 * a * c_prime
+
+    if discriminant > 0:
+        # Two real roots
+        t1 = (-b + np.sqrt(discriminant)) / (2 * a)
+        t2 = (-b - np.sqrt(discriminant)) / (2 * a)
+        print(f"Hit times: t1 = {t1:.2f}, t2 = {t2:.2f}")
+    elif discriminant == 0:
+        # One real root (tangential hit)
+        t = -b / (2 * a)
+        return None
+        print(f"Single hit time: t = {t:.2f}")
+    else:
+        return None
+        # No real roots
+        print("No hit times (parabola does not reach the target value).")
+
+    # print(t1)
+    #
+    # print(f"x={linear_fit_and_predict(t, x, t1)}")
+    # print(f"y={linear_fit_and_predict(t, y, t1)}")
+    return (linear_fit_and_predict(t, x, t1),linear_fit_and_predict(t, y, t1))
+    # plt.show()
+
+import numpy as np
+
+def linear_fit_and_predict(t, x, t1):
+    """
+    Perform a linear fit to the data (t, x) and return the predicted value at t1.
+
+    Parameters:
+        t (array-like): Independent variable (e.g., time).
+        x (array-like): Dependent variable (e.g., some measurement over time).
+        t1 (float): The point at which to evaluate the linear fit.
+
+    Returns:
+        float: The predicted value of the linear fit at t1.
+    """
+    # Perform a linear fit (x = m*t + c)
+    coefficients = np.polyfit(t, x, 1)  # Degree 1 for linear fit
+    m, c = coefficients  # Slope and intercept
+
+    # Compute the fitted value at t1
+    x_t1 = m * t1 + c
+    return x_t1
 
 
 if __name__ == "__main__":
@@ -205,6 +356,6 @@ if __name__ == "__main__":
     data_to_graph(new)
     # create_graph.run(map)
 
-    for a, b in convert_dict_to_list_of_tuples(new):
-        print(f"ID = {a}")
-        print(b)
+    # for a, b in convert_dict_to_list_of_tuples(new):
+    #     print(f"ID = {a}")
+    #     print(b)
