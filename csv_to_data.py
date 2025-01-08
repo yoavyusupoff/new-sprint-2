@@ -3,7 +3,7 @@ import pandas as pd
 from typing import List, Tuple, Dict
 
 from utils import sphere_to_cartesian
-
+from create_graph import run  # Assuming the run function is in existing_file.py
 # ___________________________________________________________________________
 
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     result_ = merge_id_to_data_dicts(folder_path_)
 
     new = create_id_to_xyz_table(result_)
-
-    for tup in new:
-        print(f"ID = {tup[0]}")
-        print(tup[1])
+    run(new)
+    # for tup in new:
+    #     print(f"ID = {tup[0]}")
+    #     print(tup[1])
