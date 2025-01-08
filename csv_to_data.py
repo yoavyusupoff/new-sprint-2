@@ -2,13 +2,10 @@ import os
 
 import numpy as np
 import pandas as pd
-from typing import List, Dict
-
+from typing import List, Tuple, Dict
 import tqdm
-import pickle
-
 from utils import sphere_to_xyz
-
+import pickle
 # ___________________________________________________________________________
 
 
@@ -147,8 +144,7 @@ def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
 
 def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, pd.DataFrame]:
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
-            for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(),
-                                                   desc="Converting to Cartesian")}
+            for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
 
 # ___________________________________________________________________________
 
@@ -166,8 +162,8 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
 
 if __name__ == "__main__":
     folder_path_ = "./data/With ID/Target bank data"
-    PKL = r"pkl/1341.pkl"
 
+    PKL = r"pkl/1341.pkl"
     # ____________ If you want to save ______________
     # result_ = merge_id_to_data_maps(folder_path_)
     # new = create_id_to_cartesian_map(result_)
@@ -180,6 +176,8 @@ if __name__ == "__main__":
         new = pickle.load(f)
 
 
-    for rock_id, value in convert_dict_to_list_of_tuples(new):
-        print(rock_id)
+
+
+    for key, value in new.items():
+        print(key)
         print(value)
