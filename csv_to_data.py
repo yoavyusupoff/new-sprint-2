@@ -1,9 +1,11 @@
-from typing import List, Tuple, Dict
-
 import os
 import pandas as pd
+from typing import List, Tuple, Dict
+
+from utils import sphere_to_cartesian
 
 # ___________________________________________________________________________
+
 
 FILENAME_SUFFIX = "_with_ID.csv"
 TIME_OFFSET = 1736300000
@@ -11,6 +13,10 @@ TIME_OFFSET = 1736300000
 ID = "ID"
 RADAR_NAME = "radar_name"
 PHI = "phi"
+
+X = "x"
+Y = "y"
+Z = "z"
 
 TIME = "time"
 RANGE = "range"
@@ -49,7 +55,10 @@ def modify_sub_table(sub_table: pd.DataFrame, radar_name: str) -> pd.DataFrame:
     result.insert(0, RADAR_NAME, radar_name)
 
     # remove the time offset to work with more logical time
-    result[TIME] = result[TIME] - TIME_OFFSET
+    result[TIME] -= TIME_OFFSET
+
+    # convert the range from meters to kilometers
+    result[RANGE] = result[RANGE] / 1000
 
     # replace elevation column with phi column (90 - alpha)
     result.insert(result.columns.get_loc(ELEVATION), PHI, 90 - result[ELEVATION])
@@ -100,11 +109,41 @@ def merge_id_to_data_dicts(folder_path: str) -> List[Tuple[int, pd.DataFrame]]:
 # ___________________________________________________________________________
 
 
+def create_id_to_xyz_table(id_to_data_map: List[Tuple[int, pd.DataFrame]]):
+    result = []
+
+    for rocket_id, data_table in id_to_data_map:
+        new_data = pd.DataFrame()
+        new_data[TIME] = data_table[TIME]
+
+        x_list, y_list, z_list = [], [], []
+
+        for index, row in data_table.iterrows():
+            r, phi, theta = row[RANGE], row[PHI], row[AZIMUTH]
+            x, y, z = sphere_to_cartesian(row[RADAR_NAME], (r, phi, theta))
+            x_list.append(x)
+            y_list.append(y)
+            z_list.append(z)
+
+        new_data[X] = pd.DataFrame(x_list)
+        new_data[Y] = pd.DataFrame(y_list)
+        new_data[Z] = pd.DataFrame(z_list)
+
+        result.append((rocket_id, new_data))
+
+    return result
+
+
+# ___________________________________________________________________________
+
+
 # run example
 if __name__ == "__main__":
     folder_path_ = "./data/With ID/Impact points data"
     result_ = merge_id_to_data_dicts(folder_path_)
 
-    for tup in result_:
+    new = create_id_to_xyz_table(result_)
+
+    for tup in new:
         print(f"ID = {tup[0]}")
         print(tup[1])
