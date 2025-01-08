@@ -178,7 +178,7 @@ if __name__ == "__main__":
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    map = load_map()
+    map = load_cartesian_map()
 
 
     create_graph.run(map)
