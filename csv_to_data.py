@@ -13,7 +13,7 @@ from utils import sphere_to_xyz
 
 # ___________________________________________________________________________
 
-
+PKL = r"pkl/1420.pkl"
 FOLDER_PATH = "./data/With ID/Target bank data"
 FILENAME_SUFFIX = "_with_ID.csv"
 TIME_OFFSET = 1736300000
@@ -160,16 +160,17 @@ def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[
 # ___________________________________________________________________________
 
 
-def get_numpy_result(folder_path: str) -> Dict[int, np.ndarray]:
-    merged = merge_id_to_data_maps(folder_path)
-    merged_in_cartesian = create_id_to_cartesian_map(merged)
+def get_numpy_result(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, np.ndarray]:
 
     result = dict()
-    for key, id_map in convert_dict_to_list_of_tuples(merged_in_cartesian):
-        id_map.drop(columns=[RADAR_NAME], inplace=True)
+    for key, id_map in convert_dict_to_list_of_tuples(id_to_data_map):
         result[key] = id_map.to_numpy()
 
     return result
+
+
+def ramot_main() -> Dict[int, np.ndarray]:
+    return get_numpy_result(load_cartesian_map())
 
 
 def load_cartesian_map():
@@ -341,7 +342,7 @@ def polynomial_fit_and_predict(t, x, t1, deg=1):
     return np.polyval(coefficients, t1)  # Evaluate the polynomial
 
 if __name__ == "__main__":
-    PKL = r"pkl/1420.pkl"
+
 
     # ____________ If you want to save ______________
     # result_ = merge_id_to_data_maps(FOLDER_PATH)

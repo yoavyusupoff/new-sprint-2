@@ -2,28 +2,37 @@ import numpy as np
 import pandas as pd
 from create_graph import run  # Assuming the run function is in existing_file.py
 
+from create_graph import *
+from csv_to_data import *
+from identify_rocket import get_eylon_data
+from rocket import *
+from utils import *
+from utm_to_latlon import utm_to_latlon
+from data_to_csv import write_target_bank_result, write_impact_points_result
+from test import get_impact_points
+
+
 def main():
-    # Create a sample DataFrame to simulate input data
-    n_rockets = pd.DataFrame({
-        'ID': [1, 2, 3, 4, 5],
-        'x': [10, 20, 30, 40, 50],
-        'y': [15, 25, 35, 45, 55],
-        'z': [5, 15, 25, 35, 45],
-        't': [0, 1, 2, 3, 4]
-    })
+    aylon_result = load_cartesian_map()
 
-    # Print the sample DataFrame for verification
-    print("Input DataFrame:")
-    print(n_rockets)
+    gus_result: List[Tuple[List[int], np.ndarray[float]]] = get_launch_points_clustered(aylon_result)
 
-    # Call the run function with the sample DataFrame
-    run(n_rockets)
+    lst = []
+    for tup in gus_result:
+        lat, long = utm_to_latlon(tup[1][0], tup[1][1])
+        lst.append((lat, long))
 
-    # Indicate that the run function has been executed
-    print("Run function executed.")
+    write_target_bank_result(lst)
 
-    # Since the run function does not return anything, we assume it performs plotting
-    # and other operations internally. If it had a return value, we would print it here.
+    # ramot_result = get_eylon_data(gus_result)
+
+    lst = get_impact_points()
+    write_impact_points_result(lst)
+
+
+
+
+
 
 if __name__ == "__main__":
     main()
