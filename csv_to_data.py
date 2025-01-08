@@ -1,12 +1,19 @@
 import os
-import pandas as pd
-from typing import List, Tuple, Dict
+import pickle
+from typing import List, Dict
 
-from utils import sphere_to_cartesian
-from create_graph import run  # Assuming the run function is in existing_file.py
+import numpy as np
+import pandas as pd
+import tqdm
+
+from utils import sphere_to_xyz
+
+PKL = r"pkl/1341.pkl"
+
 # ___________________________________________________________________________
 
 
+FOLDER_PATH = "./data/With ID/Target bank data"
 FILENAME_SUFFIX = "_with_ID.csv"
 TIME_OFFSET = 1736300000
 
@@ -29,6 +36,7 @@ ELEVATION_UC = "elevation_uncertainty"
 AZIMUTH_UC = "azimuth_uncertainty"
 RAD_VEL_UC = "radial_velocity_uncertainty"
 
+
 # ___________________________________________________________________________
 
 
@@ -41,6 +49,7 @@ def get_all_filenames(folder_path: str) -> List[str]:
             filenames.append(file_path)
 
     return filenames
+
 
 # ___________________________________________________________________________
 
@@ -67,7 +76,7 @@ def modify_sub_table(sub_table: pd.DataFrame, radar_name: str) -> pd.DataFrame:
     return result
 
 
-def get_id_to_data_map(radar_filename: str, folder_path: str) -> Dict[int, pd.DataFrame]:
+def create_id_to_data_map(radar_filename: str, folder_path: str) -> Dict[int, pd.DataFrame]:
     # read the csv file of the radar data and drop the unnamed first column
     data_frame = pd.read_csv(radar_filename)
     data_frame.drop(data_frame.columns[0], axis=1, inplace=True)
@@ -81,16 +90,16 @@ def get_id_to_data_map(radar_filename: str, folder_path: str) -> Dict[int, pd.Da
     return {int(key): modify_sub_table(sub_table, radar_name)
             for (key, sub_table) in data_frame.groupby(ID)}
 
+
 # ___________________________________________________________________________
 
 
-def merge_id_to_data_dicts(folder_path: str) -> List[Tuple[int, pd.DataFrame]]:
-    filenames = get_all_filenames(folder_path)
+def merge_id_to_data_maps(folder_path: str) -> Dict[int, pd.DataFrame]:
     result_map = dict()
 
-    for radar_filename in filenames:
+    for radar_filename in get_all_filenames(folder_path):
         # get the mapping of the current radar
-        id_to_data_map = get_id_to_data_map(radar_filename, folder_path)
+        id_to_data_map = create_id_to_data_map(radar_filename, folder_path)
 
         for rocket_id, data_table in id_to_data_map.items():
             # if the data is of a previously-visited radar, append to the existing data
@@ -100,50 +109,86 @@ def merge_id_to_data_dicts(folder_path: str) -> List[Tuple[int, pd.DataFrame]]:
             else:
                 result_map[rocket_id] = data_table
 
-            # sort by the time
+            # sort the rows by the time
             result_map.get(rocket_id).sort_values(by=TIME, ascending=True, ignore_index=True,
                                                   inplace=True)
 
-    return list(sorted(result_map.items()))
+    return result_map
+
 
 # ___________________________________________________________________________
 
 
-def create_id_to_xyz_table(id_to_data_map: List[Tuple[int, pd.DataFrame]]):
-    result = []
+def convert_dict_to_list_of_tuples(d: dict):
+    return list(sorted(d.items()))
 
-    for rocket_id, data_table in id_to_data_map:
-        new_data = pd.DataFrame()
-        new_data[TIME] = data_table[TIME]
 
-        x_list, y_list, z_list = [], [], []
+# ___________________________________________________________________________
 
-        for index, row in data_table.iterrows():
-            r, phi, theta = row[RANGE], row[PHI], row[AZIMUTH]
-            x, y, z = sphere_to_cartesian(row[RADAR_NAME], (r, phi, theta))
-            x_list.append(x)
-            y_list.append(y)
-            z_list.append(z)
 
-        new_data[X] = pd.DataFrame(x_list)
-        new_data[Y] = pd.DataFrame(y_list)
-        new_data[Z] = pd.DataFrame(z_list)
+def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
+    result = pd.DataFrame()
 
-        result.append((rocket_id, new_data))
+    # copy the radar name and time columns
+    result[RADAR_NAME] = table[RADAR_NAME]
+    result[TIME] = table[TIME]
+
+    x_list, y_list, z_list = [], [], []
+
+    for index, row in table.iterrows():
+        r, phi, theta = row[RANGE], row[PHI], row[AZIMUTH]
+        x, y, z = sphere_to_xyz(row[RADAR_NAME], (r, phi, theta))
+
+        x_list.append(x)
+        y_list.append(y)
+        z_list.append(z)
+
+    # add the X, Y, Z columns to the table
+    result[X] = pd.DataFrame(x_list)
+    result[Y] = pd.DataFrame(y_list)
+    result[Z] = pd.DataFrame(z_list)
 
     return result
 
 
+def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, pd.DataFrame]:
+    return {rocket_id: convert_sphere_table_to_cartesian(data_table)
+            for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
+
+
 # ___________________________________________________________________________
 
 
-# run example
-if __name__ == "__main__":
-    folder_path_ = "./data/With ID/Impact points data"
-    result_ = merge_id_to_data_dicts(folder_path_)
+def main(folder_path: str) -> Dict[int, np.ndarray]:
+    merged = merge_id_to_data_maps(folder_path)
+    merged_in_cartesian = create_id_to_cartesian_map(merged)
 
-    new = create_id_to_xyz_table(result_)
-    run(new)
-    # for tup in new:
-    #     print(f"ID = {tup[0]}")
-    #     print(tup[1])
+    result = dict()
+    for key, id_map in convert_dict_to_list_of_tuples(merged_in_cartesian):
+        result[key] = id_map.to_numpy()
+
+    return result
+
+
+def load_cartesian_map():
+    with open(PKL, "rb") as f:
+        map = pickle.load(f)
+        return map
+
+
+if __name__ == "__main__":
+    folder_path_ = "./data/With ID/Target bank data"
+
+    # ____________ If you want to save ______________
+    # result_ = merge_id_to_data_maps(folder_path_)
+    # new = create_id_to_cartesian_map(result_)
+    # Save new with pickle into pkl/[time].pkl
+    # with open(f"pkl/{1333}.pkl", "wb") as f:
+    #     pickle.dump(new, f)
+
+    # ____________ If you want to load ______________
+    map = load_cartesian_map()
+
+    for key, value in map.items():
+        print(key)
+        print(value)
