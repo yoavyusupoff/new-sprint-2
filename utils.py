@@ -1,7 +1,9 @@
-import math
 from typing import Tuple
+import math
+import geopy.distance
 
-# ___________________________________________________________________________
+
+
 
 
 RADAR_DICT = {
@@ -16,12 +18,10 @@ RADAR_DICT = {
     "Carmel": (32.65365306190331, 35.03028065430696)
 }
 
-# ___________________________________________________________________________
 
-
-def sphere_to_cartesian(radar_name: str, rocket_by_radar: Tuple[float, float, float]) \
-        -> Tuple[float, float, float]:
-    x_radar, y_radar = radar_name_to_cartesian(radar_name)
+def sphere_to_xyz(radar_name: str, rocket_by_radar: Tuple[float, float, float]) -> Tuple[float, float, float]:
+    radar_place = radar_name_to_xy(radar_name)
+    x_radar, y_radar = radar_place
 
     r, phi, theta = rocket_by_radar
     phi = math.radians(phi)
@@ -34,8 +34,14 @@ def sphere_to_cartesian(radar_name: str, rocket_by_radar: Tuple[float, float, fl
     return x, y, z
 
 
-def radar_name_to_cartesian(radar_name: str):
-    x, y = RADAR_DICT[radar_name]
-    Ox, Oy = RADAR_DICT["Ashdod"]   # set O(0, 0) to be Ashdod
+# set O as Ashdod
+def radar_name_to_xy(radar_name: str):
+    lat, long = RADAR_DICT[radar_name]
+    O_lat, O_long = RADAR_DICT['Ashdod']
+    x = geopy.distance.geodesic((lat, O_long), (O_lat, O_long)).m
+    y = geopy.distance.geodesic((O_lat, long), (O_lat, O_long)).m
+    return x, y
 
-    return x - Ox, y - Oy
+print(radar_name_to_xy("Kiryat_Gat"))
+x, y = radar_name_to_xy("Kiryat_Gat")
+print(math.sqrt(x**2 + y**2))
