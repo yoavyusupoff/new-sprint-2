@@ -2,8 +2,9 @@ import os
 import pickle
 from typing import List, Dict
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import tqdm
 import matplotlib.pyplot as plt
 
 # import create_graph
@@ -152,7 +153,8 @@ def convert_sphere_table_to_cartesian(table: pd.DataFrame) -> pd.DataFrame:
 
 def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[int, pd.DataFrame]:
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
-            for rocket_id, data_table in id_to_data_map.items()}
+            for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
+
 # ___________________________________________________________________________
 
 
@@ -173,9 +175,10 @@ def load_cartesian_map():
         cartesian_map = pickle.load(file)
     return cartesian_map
 
+
 def data_to_graph(dic: Dict):
-    for id in range(1,1500,50):
-        mat = dic[id]
+    for rocket_id in range(1,1500,50):
+        mat = dic[rocket_id]
         t = mat[TIME]
         x = mat[X]
         y = mat[Y]
@@ -185,23 +188,23 @@ def data_to_graph(dic: Dict):
         plt.plot(t,z)
         plt.show()
 
-if __name__ == "__main__":
-    print(main(FOLDER_PATH))
-    folder_path_ = "./data/With ID/Target bank data"
 
+if __name__ == "__main__":
     PKL = r"pkl/1420.pkl"
+
     # ____________ If you want to save ______________
-    result_ = merge_id_to_data_maps(folder_path_)
-    new = create_id_to_cartesian_map(result_)
-    ## Save new with pickle into pkl/[time].pkl
-    with open(f"pkl/{1420}.pkl", "wb") as f:
-        pickle.dump(new, f)
+    # result_ = merge_id_to_data_maps(FOLDER_PATH)
+    # new = create_id_to_cartesian_map(result_)
+    # # Save new with pickle into pkl/[time].pkl
+    # with open(f"pkl/{1420}.pkl", "wb") as f:
+    #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
     new = load_cartesian_map()
-    data_to_graph(map)
+
+    data_to_graph(new)
     # create_graph.run(map)
 
-    for x, y in convert_dict_to_list_of_tuples(new):
-        print(f"ID = {x}")
-        print(y)
+    for a, b in convert_dict_to_list_of_tuples(new):
+        print(f"ID = {a}")
+        print(b)
