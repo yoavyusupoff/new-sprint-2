@@ -6,11 +6,9 @@ def simulate_rocket_impact_2d(
     fuel_mass,           # fuel mass portion
     exhaust_velocity,    # v_e (m/s)
     burn_time,           # duration of thrust (s)
+    mu,               # mekadem hicuh
     dt=0.01,             # integration timestep
     g=9.81,               # gravity (m/s^2)
-    C_d=0.5,             # drag coefficient (dimensionless)
-    A=0.1,               # frontal area (m^2)
-    rho=1.225            # air density (kg/m^3)
 ):
     """
     Returns an approximate (x, y, z=0) impact point for the rocket,
@@ -61,9 +59,7 @@ def simulate_rocket_impact_2d(
         # Calculate the rocket's velocity magnitude
         velocity = np.sqrt(vx ** 2 + vz ** 2)
 
-        # Drag force
-        F_d = 0.5 * rho * C_d * A * velocity ** 2
-
+        F_d= mu*velocity**2
         # Decompose drag force into components
         if velocity > 0:
             F_d_x = F_d * (vx / velocity)
@@ -132,7 +128,7 @@ def identify_best_rocket(
         fmass = specs["fuel_mass"]
         ve = specs["exhaust_velocity"]
         btime = specs["burn_time"]
-
+        A=specs["A"]
         # simulate
         sim_x= simulate_rocket_impact_2d(
             angle_deg=angle_deg,
@@ -140,6 +136,7 @@ def identify_best_rocket(
             fuel_mass=fmass,
             exhaust_velocity=ve,
             burn_time=btime,
+            mu=A,
             dt=dt
         )
         # error in x
@@ -151,40 +148,7 @@ def identify_best_rocket(
     return errors
 
 
-def identify_rocket(angle_deg:float, actual_x:float, rocket_specs_dict:dict, dt=0.01):
 
-    angle_deg = 45.0
-    actual_x = 1000.0
-
-    rocket_specs = {
-        "Qassam4": {
-            "mass": 50.0,
-            "fuel_mass": 30.0,
-            "exhaust_velocity": 1200.0,
-            "burn_time": 0.5
-        },
-        "Grad": {
-            "mass": 280.0,
-            "fuel_mass": 120.0,
-            "exhaust_velocity": 2000.0,
-            "burn_time": 2.0
-        },
-        # ... add more ...
-    }
-
-    errors, best_rocket, best_err = identify_best_rocket(
-        angle_deg=angle_deg,
-        actual_x=actual_x,
-        rocket_specs_dict=rocket_specs,
-        dt=0.01
-    )
-
-    # Print results
-    print("Errors in X for each rocket:")
-    for rname, errval in errors.items():
-        print(f"  {rname}: {errval:.2f} m")
-
-    print(f"\nBest rocket: {best_rocket}, with error={best_err:.2f} m")
 
 def make_rocket_data():
     rockets_data={}
@@ -192,29 +156,62 @@ def make_rocket_data():
     "mass": 50.0,
     "fuel_mass": 30.0,
     "exhaust_velocity": 1200.0,
-    "burn_time": 0.5
+    "burn_time": 0.5,
+    "A":2.888
     }
     rockets_data["Grad"] = {
         "mass": 300.0,
         "fuel_mass": 140.0,
         "exhaust_velocity": 2000.0,
-        "burn_time": 2.0
+        "burn_time": 2.0,
+        "A":11.121
+
     }
     rockets_data["M75"] = {
         "mass": 900.0,
-        "fuel_mass": 140.0,
-        "exhaust_velocity": 2000.0,
-        "burn_time": 2.0
+        "fuel_mass": 500.0,
+        "exhaust_velocity": 1620.0,
+        "burn_time": 4.0,
+        "A":0.777
+
     }
     rockets_data["R160"] = {
-        "mass": 300.0,
-        "fuel_mass": 140.0,
-        "exhaust_velocity": 2000.0,
-        "burn_time": 2.0
+        "mass": 1670.0,
+        "fuel_mass": 1000.0,
+        "exhaust_velocity": 3000.0,
+        "burn_time": 10.0,
+        "A":1.243
+
     }
     return rockets_data
 
-if __name__ == "__main__":
+def ramot(arr:np.ndarray) -> str:
     rockets_data=make_rocket_data()
+    scores_dict={"R160":0, "Grad":0, "M75":0, "Qassam4":0}
+    for launch in arr:
+        angle = launch[0]
+        actual_x = launch[1]
+        errors=identify_best_rocket(angle, actual_x, rockets_data)
+        best_rocket="R160"
+        best_rocket_error = errors["R160"]
+        for rocket_name, error in errors.items():
+            if error < best_rocket_error:
+                best_rocket_error = error
+                best_rocket = rocket_name
+        scores_dict[best_rocket] +=1
+    best_rocket_name="R160"
+    best_score=scores_dict[rocket_name]
+    total_score=0
+    for rocket_name, score in scores_dict.items():
+        total_score+=score
+        print(rocket_name + " " + str(score))
+        if score>best_score:
+            best_rocket_name=rocket_name
+            best_score=score
+    print("i believe its " + best_rocket_name + " my accuracy is " + str(best_score/total_score) + " his error is " + str(best_rocket_error))
+    return best_rocket_name
+
+
+
 
 
