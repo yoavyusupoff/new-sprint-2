@@ -283,10 +283,11 @@ def get_launch_finish_points(x, y, z, t):
     y_hitt = y[first_part_len::]
     z_hitt = z[first_part_len::]
     t_hitt = t[first_part_len::]
-    coefficients = np.polyfit(t, z, 2)  # Returns [a, b, c] for at^2 + bt + c
+    coefficients_start = np.polyfit(t_start, z_start, 2)  # Returns [a, b, c] for at^2 + bt + c
+    coefficients_fin = np.polyfit(t_start, z_hitt, 2)  # Returns [a, b, c] for at^2 + bt + c
 
-    a, b, c = coefficients
-
+    a, b, c = coefficients_start
+    d,e,f = coefficients_fin
     # Target value to find hit time
     z_hit = 0  # Adjust this value as needed
 
@@ -297,7 +298,7 @@ def get_launch_finish_points(x, y, z, t):
     if discriminant <= 0:
         return None
     t1 = (-b + np.sqrt(discriminant)) / (2 * a)
-    t2 = (-b - np.sqrt(discriminant)) / (2 * a)
+    t2 = (-e - np.sqrt(discriminant)) / (2 * d)
 
     fit_deg = 2
     x_0 = polynomial_fit_and_predict(t_start, x_start, t1, deg=fit_deg)
@@ -316,7 +317,7 @@ def get_launch_finish_points(x, y, z, t):
     # plt.scatter(t1, y_0, color='red', marker='x', label='y_0')
     # plt.show()
 
-    return [(x_0, y_0),(x_1,y_1)]
+    return [(x_0, y_0),(x_1,y_1),t2-t1]
     # plt.show()
 
 
