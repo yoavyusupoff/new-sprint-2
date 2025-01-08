@@ -1,10 +1,11 @@
 from typing import Tuple
 import math
+import geopy.distance
 
 
 RADAR_DICT = {
     "Ashdod": (31.77757586390034, 34.65751251836753),
-    "Kriyat_Gat": (31.602089287486198, 34.74535762921831),
+    "Kiryat_Gat": (31.602089287486198, 34.74535762921831),
     "Ofakim": (31.302709659709315, 34.59685294800365),
     "Tseelim": (31.20184656499955, 34.52669152933695),
     "Meron": (33.00023023451869, 35.404698698883585),
@@ -23,8 +24,8 @@ def sphere_to_xyz(radar_name: str, rocket_by_radar: Tuple[float, float, float]) 
     phi = math.radians(phi)
     theta = math.radians(theta)
 
-    x = x_radar + r * math.sin(phi) * math.cos(theta)
-    y = y_radar + r * math.sin(phi) * math.sin(theta)
+    x = x_radar + r * math.sin(phi) * math.sin(theta)
+    y = y_radar + r * math.sin(phi) * math.cos(theta)
     z = r * math.cos(phi)
 
     return x, y, z
@@ -32,6 +33,18 @@ def sphere_to_xyz(radar_name: str, rocket_by_radar: Tuple[float, float, float]) 
 
 # set O as Ashdod
 def radar_name_to_xy(radar_name: str):
-    x, y = RADAR_DICT[radar_name]
-    Ox, Oy = RADAR_DICT['Ashdod']
-    return x - Ox, y - Oy
+    lat, long = RADAR_DICT[radar_name]
+    O_lat, O_long = RADAR_DICT['Ashdod']
+
+    x_sign = 1
+    y_sign = 1
+
+    if long - O_long < 0:
+        x_sign = -1
+    if lat - O_lat < 0:
+        y_sign = -1
+
+    x = geopy.distance.geodesic((O_lat, long), (O_lat, O_long)).km * x_sign
+    y = geopy.distance.geodesic((lat, O_long), (O_lat, O_long)).km * y_sign
+
+    return x, y
