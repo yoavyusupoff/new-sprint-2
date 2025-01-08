@@ -1,11 +1,15 @@
 import os
+import pickle
+from typing import List, Dict
 
 import numpy as np
 import pandas as pd
-from typing import List, Tuple, Dict
 import tqdm
+
 from utils import sphere_to_xyz
-import pickle
+
+PKL = r"pkl/1341.pkl"
+
 # ___________________________________________________________________________
 
 
@@ -32,6 +36,7 @@ ELEVATION_UC = "elevation_uncertainty"
 AZIMUTH_UC = "azimuth_uncertainty"
 RAD_VEL_UC = "radial_velocity_uncertainty"
 
+
 # ___________________________________________________________________________
 
 
@@ -44,6 +49,7 @@ def get_all_filenames(folder_path: str) -> List[str]:
             filenames.append(file_path)
 
     return filenames
+
 
 # ___________________________________________________________________________
 
@@ -84,6 +90,7 @@ def create_id_to_data_map(radar_filename: str, folder_path: str) -> Dict[int, pd
     return {int(key): modify_sub_table(sub_table, radar_name)
             for (key, sub_table) in data_frame.groupby(ID)}
 
+
 # ___________________________________________________________________________
 
 
@@ -108,11 +115,13 @@ def merge_id_to_data_maps(folder_path: str) -> Dict[int, pd.DataFrame]:
 
     return result_map
 
+
 # ___________________________________________________________________________
 
 
 def convert_dict_to_list_of_tuples(d: dict):
     return list(sorted(d.items()))
+
 
 # ___________________________________________________________________________
 
@@ -146,6 +155,7 @@ def create_id_to_cartesian_map(id_to_data_map: Dict[int, pd.DataFrame]) -> Dict[
     return {rocket_id: convert_sphere_table_to_cartesian(data_table)
             for rocket_id, data_table in tqdm.tqdm(id_to_data_map.items(), desc="Converting to Cartesian")}
 
+
 # ___________________________________________________________________________
 
 
@@ -160,10 +170,15 @@ def main(folder_path: str) -> Dict[int, np.ndarray]:
     return result
 
 
+def load_cartesian_map():
+    with open(PKL, "rb") as f:
+        map = pickle.load(f)
+        return map
+
+
 if __name__ == "__main__":
     folder_path_ = "./data/With ID/Target bank data"
 
-    PKL = r"pkl/1341.pkl"
     # ____________ If you want to save ______________
     # result_ = merge_id_to_data_maps(folder_path_)
     # new = create_id_to_cartesian_map(result_)
@@ -172,12 +187,8 @@ if __name__ == "__main__":
     #     pickle.dump(new, f)
 
     # ____________ If you want to load ______________
-    with open(PKL, "rb") as f:
-        new = pickle.load(f)
+    map = load_cartesian_map()
 
-
-
-
-    for key, value in new.items():
+    for key, value in map.items():
         print(key)
         print(value)
